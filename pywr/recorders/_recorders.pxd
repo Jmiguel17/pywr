@@ -13,8 +13,7 @@ cdef class Aggregator:
 
 cdef class Recorder(Component):
     cdef int _is_objective
-    cdef double _constraint_lower_bounds
-    cdef double _constraint_upper_bounds
+    cdef public bint is_constraint
     cdef public double epsilon
     cdef public bint ignore_nan
     cdef public Aggregator _scenario_aggregator
@@ -50,6 +49,29 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
     pass
 
 cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
+    pass
+
+cdef class AbstractAnnualRecorder(Recorder):
+    cdef public list nodes
+    cdef double[:, :] _data
+    cdef double[:, :] _max_flow
+    cdef double[:, :] _actual_flow
+    cdef public int reset_day
+    cdef public int reset_month
+    cdef int _current_year_index
+    cdef int _last_reset_year
+    cdef Aggregator _temporal_aggregator
+
+cdef class AnnualDeficitRecorder(AbstractAnnualRecorder):
+    pass
+
+cdef class AnnualFlowRecorder(AbstractAnnualRecorder):
+    pass
+
+cdef class AnnualSuppliedRatioRecorder(AbstractAnnualRecorder):
+    pass
+
+cdef class AnnualCurtailmentRatioRecorder(AbstractAnnualRecorder):
     pass
 
 cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
