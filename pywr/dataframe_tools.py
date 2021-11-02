@@ -204,7 +204,9 @@ def read_dataframe(model, data):
     # values reference data in an external file
     url = data.pop('url', None)
     if url is not None:
-        if not os.path.isabs(url) and model.path is not None:
+        if url.startswith("http"):
+            url = retrieve_url(url)
+        elif not os.path.isabs(url) and model.path is not None:
             url = os.path.join(model.path, url)
     else:
         # Must be an embedded dataframe
@@ -267,3 +269,28 @@ def read_dataframe(model, data):
     data.clear()
 
     return df
+
+
+def retrieve_url(url):
+    import shutil
+    import logging
+    from urllib.request import urlopen
+
+    logger = logging.getLogger(__name__)
+
+    urldir = "data"
+    if not os.path.exists(urldir):
+        try:
+            os.makedirs(urldir)
+        except OSError as err:
+            raise OSError(f"Unable to create URL retrieval directory at {urldir}: {err}")
+
+    filename = os.path.basename(url)
+    filepath = os.path.join(urldir, filename)
+    logger.info(f"Retrieving {url} to {filepath} ...")
+
+    with urlopen(url) as resp, open(filepath, "wb") as fp:
+        shutil.copyfileobj(resp, fp)
+
+    logger.info(f"Retrieved {filepath} ({os.stat(filepath).st_size} bytes)")
+    return filepath
