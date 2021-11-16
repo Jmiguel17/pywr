@@ -24,8 +24,6 @@ cdef class Parameter(Component):
     cpdef int[:] get_integer_lower_bounds(self)
     cpdef int[:] get_integer_upper_bounds(self)
 
-
-
 cdef class ConstantParameter(Parameter):
     cdef double _value
     cdef public double scale, offset
@@ -56,8 +54,6 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
     cdef double[:, :] _factors
     cdef Scenario _scenario
     cdef int _scenario_index
-
-
 
 cdef class DailyProfileParameter(Parameter):
     cdef double[:] _values
@@ -149,11 +145,9 @@ cdef class AggregatedIndexParameter(IndexParameter):
     cpdef add(self, Parameter parameter)
     cpdef remove(self, Parameter parameter)
 
-
 cdef class DivisionParameter(Parameter):
     cdef Parameter _numerator
     cdef Parameter _denominator
-
 
 cdef class NegativeParameter(Parameter):
     cdef public Parameter parameter
@@ -184,3 +178,7 @@ cdef class PiecewiseIntegralParameter(Parameter):
     cdef public double[:] x
     cdef public double[:] y
     cdef public Parameter parameter
+
+cdef class DiscountFactorParameter(Parameter):
+    cdef public double rate
+    cdef public int base_year
