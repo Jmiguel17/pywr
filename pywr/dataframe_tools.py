@@ -42,6 +42,14 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
     start = target_index[0]
     end = target_index[-1]
 
+    # This avoids TypeError on df.to_period where the series
+    # originates from an inline dataframeparameter
+    if isinstance(df.index, pandas.core.indexes.base.Index):
+        try:
+          df.index = pandas.to_datetime(df.index, infer_datetime_format=True)
+        except:
+          df.index = target_index
+
     if not isinstance(df.index, pandas.PeriodIndex):
         # Converting to period is sometimes unreliable. E.g. with freq='7D'
         # If the target frequency is passed explicitly this can help, but

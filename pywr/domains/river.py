@@ -1,5 +1,5 @@
 
-from pywr.nodes import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink
+from pywr.nodes import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink, NodeMeta
 from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter
 
@@ -14,7 +14,7 @@ class RiverDomainMixin(object):
         super(RiverDomainMixin, self).__init__(*args, **kwargs)
 
 
-class Catchment(RiverDomainMixin, Input):
+class Catchment(RiverDomainMixin, Input, metaclass=NodeMeta):
     """A hydrological catchment, supplying water to the river network"""
     def __init__(self, *args, **kwargs):
         """Initialise a new Catchment node.
@@ -56,7 +56,7 @@ class Catchment(RiverDomainMixin, Input):
         return node
 
 
-class Reservoir(RiverDomainMixin, Storage):
+class Reservoir(RiverDomainMixin, Storage, metaclass=NodeMeta):
     """A reservoir node with control curve.
 
     The Reservoir is a subclass of Storage with additional functionality to provide a
