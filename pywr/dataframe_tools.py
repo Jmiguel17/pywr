@@ -42,6 +42,16 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
     start = target_index[0]
     end = target_index[-1]
 
+    """
+    # This avoids TypeError on df.to_period where the series
+    # originates from an inline dataframeparameter
+    if isinstance(df.index, pandas.core.indexes.base.Index):
+        try:
+          df.index = pandas.to_datetime(df.index, infer_datetime_format=True)
+        except:
+          df.index = target_index
+    """
+
     if not isinstance(df.index, pandas.PeriodIndex):
         # Converting to period is sometimes unreliable. E.g. with freq='7D'
         # If the target frequency is passed explicitly this can help, but
@@ -204,7 +214,18 @@ def read_dataframe(model, data):
     # values reference data in an external file
     url = data.pop('url', None)
     if url is not None:
-        if not os.path.isabs(url) and model.path is not None:
+        """
+            Pandas.read_csv handles remote urls (http or s3) but
+            Pandas.read_hdf requires a local path (on which os.path.exists
+            is called).  The retrieve_{url,s3} functions prefetch hdf
+            files from either http or s3 urls respectively and return an
+            amended 'url' which now points to the local file.
+        """
+        if url.startswith("http"):
+            url = retrieve_url(url)
+        elif url.startswith("s3://") and url.endswith("h5"):
+            url = retrieve_s3(url)
+        elif not os.path.isabs(url) and model.path is not None:
             url = os.path.join(model.path, url)
     else:
         # Must be an embedded dataframe
@@ -267,3 +288,57 @@ def read_dataframe(model, data):
     data.clear()
 
     return df
+
+
+def retrieve_url(url):
+    import shutil
+    import logging
+    from urllib.request import urlopen
+
+    logger = logging.getLogger(__name__)
+
+    urldir = "data"
+    if not os.path.exists(urldir):
+        try:
+            os.makedirs(urldir)
+        except OSError as err:
+            raise OSError(f"Unable to create URL retrieval directory at {urldir}: {err}")
+
+    filename = os.path.basename(url)
+    filedest = os.path.join(urldir, filename)
+    logger.info(f"Retrieving {url} to {filedest} ...")
+
+    with urlopen(url) as resp, open(filedest, "wb") as fp:
+        shutil.copyfileobj(resp, fp)
+
+    logger.info(f"Retrieved {filedest} ({os.stat(filedest).st_size} bytes)")
+    return filedest
+
+
+def retrieve_s3(s3path):
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        import s3fs
+    except ImportError:
+        logger.info("Retrieval from S3 url requires the s3fs module")
+        raise
+
+    datadir = "data"
+    filepath = s3path[5:]
+    filename = os.path.basename(s3path)
+    filedest = os.path.join(datadir, filename)
+
+    if not os.path.exists(datadir):
+        try:
+            os.makedirs(datadir)
+        except OSError as err:
+            raise OSError(f"Unable to create S3 retrieval directory at {datadir}: {err}")
+
+    fs = s3fs.S3FileSystem(anon=True)
+    logger.info(f"Retrieving {s3path} to {filedest} ...")
+    fs.get(filepath, filedest)
+    logger.info(f"Retrieved {filedest} ({os.stat(filedest).st_size} bytes)")
+
+    return filedest
