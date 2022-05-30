@@ -111,6 +111,7 @@ class PlatypusWrapper(BaseOptimisationWrapper):
         objectives = []
         for r in self.model_objectives:
             sign = 1.0 if r.is_objective == 'minimise' else -1.0
+            #you can put the print statment below
             value = r.aggregated_value()
             objectives.append(sign*value)
 

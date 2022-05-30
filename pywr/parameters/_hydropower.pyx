@@ -370,7 +370,6 @@ cdef class HydropowerTargetParameterWithVaribaleTailwater(Parameter):
         q = inverse_hydropower_calculation(power, head, 0.0, self.efficiency, density=self.density,
                                            flow_unit_conversion=self.flow_unit_conversion,
                                            energy_unit_conversion=self.energy_unit_conversion)
-
         # Bound the flow if required
         if self._max_flow is not None:
             q = min(self._max_flow.get_value(scenario_index), q)

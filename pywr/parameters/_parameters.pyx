@@ -1410,7 +1410,6 @@ cdef class AggregatedIndexParameter(IndexParameter):
         for i in range(n):
             self.__values[i] = accum[i]
 
-
 AggregatedIndexParameter.register()
 
 

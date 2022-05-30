@@ -788,7 +788,6 @@ cdef class AbstractAnnualRecorder(Recorder):
 
 
 
-
 cdef class AnnualDeficitRecorder(AbstractAnnualRecorder):
     """Recorder for the cumulative annual deficit across multiple nodes.
 

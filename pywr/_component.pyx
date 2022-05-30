@@ -1,8 +1,6 @@
 import logging
 
-
 logger = logging.getLogger(__name__)
-
 
 ROOT_NODE = "root"
 
