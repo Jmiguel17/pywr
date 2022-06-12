@@ -213,6 +213,10 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
 ParameterThresholdParameter.register()
 
 
+
+
+
+
 cdef class RecorderThresholdParameter(AbstractThresholdParameter):
     """Returns one of two values depending on a Recorder value and a threshold
 
@@ -253,6 +257,81 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
         predicate = data.pop("predicate", None)
         return cls(model, recorder, threshold, values=values, predicate=predicate, **data)
 RecorderThresholdParameter.register()
+
+
+
+
+
+cdef class AgregatedThresholdRecorder(AbstractThresholdParameter):
+    """Returns one of two values depending on a Recorder value and a threshold
+
+    Parameters
+    ----------
+    recorder : `pywr.recorder.Recorder`
+
+    """
+
+    def __init__(self,  model, Recorder recorder, *args, initial_value=1, **kwargs):
+        super(AgregatedThresholdRecorder, self).__init__(model, *args, **kwargs)
+        self.recorder = recorder
+        self.recorder.parents.add(self)
+        self.initial_value = initial_value
+
+    cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        # TODO Make this a more general API on Recorder
+        return np.array(self.recorder.values())[scenario_index.global_id]
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns 1 if the predicate evalutes True, else 0"""
+        cdef int index = timestep.index
+        cdef int ind
+        if index == 0:
+            # on the first day the recorder doesn't have a value so we have no
+            # threshold to compare to
+            ind = self.initial_value
+        else:
+            ind = super(AgregatedThresholdRecorder, self).index(timestep, scenario_index)
+        return ind
+
+    @classmethod
+    def load(cls, model, data):
+        from pywr.recorders._recorders import load_recorder  # delayed to prevent circular reference
+        recorder = load_recorder(model, data.pop("recorder"))
+        threshold = load_parameter(model, data.pop("threshold"))
+        values = data.pop("values", None)
+        predicate = data.pop("predicate", None)
+        return cls(model, recorder, threshold, values=values, predicate=predicate, **data)
+AgregatedThresholdRecorder.register()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 cdef class CurrentYearThresholdParameter(AbstractThresholdParameter):

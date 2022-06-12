@@ -1025,7 +1025,11 @@ cdef class IndexedArrayParameter(Parameter):
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the Parameter at the current index"""
         cdef int index
-        index = self.index_parameter.get_index(scenario_index)
+        cdef int index_ts = timestep.index
+        if index_ts == 48:
+            index = 0
+        else:
+            index = self.index_parameter.get_index(scenario_index)  
         cdef Parameter parameter = self.params[index]
         return parameter.get_value(scenario_index)
 
@@ -1409,7 +1413,6 @@ cdef class AggregatedIndexParameter(IndexParameter):
         # Finally set the float values
         for i in range(n):
             self.__values[i] = accum[i]
-
 AggregatedIndexParameter.register()
 
 
@@ -1493,6 +1496,65 @@ cdef class NegativeParameter(Parameter):
         return cls(model, parameter, **data)
 NegativeParameter.register()
 
+
+
+
+
+cdef class Return_load(Parameter):
+    """ Parameter that takes net power trade `Parameter` and return if a value is Negative
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to to compare with the float.
+    """
+    def __init__(self, model, parameter, *args, **kwargs):
+        super(Return_load, self).__init__(model, *args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef int i
+        if self.parameter.value(timestep,scenario_index)>=0:
+            return self.parameter.value(timestep,scenario_index)
+        else:
+            return 0
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+Return_load.register()
+
+
+
+
+
+cdef class Return_generator(Parameter):
+    """ Parameter that takes net power trade `Parameter` and return if a value is Negative
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to to compare with the float.
+    """
+    def __init__(self, model, parameter, *args, **kwargs):
+        super(Return_generator, self).__init__(model, *args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef int i
+        if self.parameter.value(timestep,scenario_index)<=0:
+            return self.parameter.value(timestep,scenario_index)*-1
+        else:
+            return 0
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+Return_generator.register()
 
 cdef class MaxParameter(Parameter):
     """ Parameter that takes maximum of another `Parameter` and constant value (threshold)

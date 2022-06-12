@@ -158,6 +158,17 @@ cdef class DivisionParameter(Parameter):
 cdef class NegativeParameter(Parameter):
     cdef public Parameter parameter
 
+
+
+cdef class Return_load(Parameter):
+    cdef public Parameter parameter
+
+
+cdef class Return_generator(Parameter):
+    cdef public Parameter parameter
+
+
+
 cdef class MaxParameter(Parameter):
     cdef public Parameter parameter
     cdef public double threshold
