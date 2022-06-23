@@ -310,6 +310,58 @@ AgregatedThresholdRecorder.register()
 
 
 
+cdef class AgregatedCostThresholdParameter(AbstractThresholdParameter):
+    """Returns one of two values depending on a Recorder value and a threshold
+
+    Parameters
+    ----------
+    recorder : `pywr.recorder.Recorder`
+
+    """
+
+    def __init__(self,  model, Parameter recorder1, Parameter recorder2, *args, initial_value=1, **kwargs):
+        super(AgregatedCostThresholdParameter, self).__init__(model, *args, **kwargs)
+        self.recorder1 = recorder1
+        self.recorder2 = recorder2
+        self.recorder1.parents.add(self)
+        self.recorder2.parents.add(self)
+        self.initial_value = initial_value
+
+    cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        # TODO Make this a more general API on Recorder
+
+        return (self.recorder1.get_value(scenario_index)-self.recorder2.get_value(scenario_index))
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns 1 if the predicate evalutes True, else 0"""
+        cdef int index = timestep.index
+        cdef int ind
+        if index == 0:
+            # on the first day the recorder doesn't have a value so we have no
+            # threshold to compare to
+            ind = self.initial_value
+        else:
+            ind = super(AgregatedCostThresholdParameter, self).index(timestep, scenario_index)
+        return ind
+
+    @classmethod
+    def load(cls, model, data):
+        recorder = data.pop("recorder")
+        recorder1 = load_parameter(model, recorder[0])
+        recorder2 = load_parameter(model, recorder[1])
+        threshold = load_parameter(model, data.pop("threshold"))
+        values = data.pop("values", None)
+        predicate = data.pop("predicate", None)
+        return cls(model, recorder1, recorder2, threshold, values=values, predicate=predicate, **data)
+AgregatedCostThresholdParameter.register()
+
+
+
+
+
+
+
+
 
 
 

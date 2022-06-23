@@ -31,6 +31,20 @@ cdef class AgregatedThresholdRecorder(AbstractThresholdParameter):
     cdef public Recorder recorder
     cdef public initial_value
 
+cdef class AgregatedCostThresholdRecorder(AbstractThresholdParameter):
+    cdef public Recorder recorder1
+    cdef public Recorder recorder2
+    cdef public initial_value
+
+
+
+
+
+
+cdef class AgregatedCostThresholdParameter(AbstractThresholdParameter):
+    cdef public Parameter recorder1
+    cdef public Parameter recorder2
+    cdef public initial_value
 
 cdef class CurrentYearThresholdParameter(AbstractThresholdParameter):
     pass
