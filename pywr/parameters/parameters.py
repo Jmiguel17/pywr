@@ -153,6 +153,32 @@ class AbstractInterpolatedParameter(Parameter):
 
     def value(self, ts, scenario_index):
         v = self._value_to_interpolate(ts, scenario_index)
+
+        xmin = np.min(self.x)
+        xmax = np.max(self.x)
+
+        # Tolerance for floating point / solver noise.
+        # Scale with table range so large reservoirs get a slightly larger tolerance.
+        tol = max(1e-3, 1e-8 * (xmax - xmin))
+
+        if v < xmin:
+            if xmin - v <= tol:
+                v = xmin
+            else:
+                raise ValueError(
+                    f"{self.name} interpolation value {v} is below range "
+                    f"[{xmin}, {xmax}]"
+                )
+
+        elif v > xmax:
+            if v - xmax <= tol:
+                v = xmax
+            else:
+                raise ValueError(
+                    f"{self.name} interpolation value {v} is above range "
+                    f"[{xmin}, {xmax}]"
+                )
+
         return self.interp(v)
 
 
