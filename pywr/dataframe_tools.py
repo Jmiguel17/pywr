@@ -105,14 +105,14 @@ def align_and_resample_dataframe(df, target_index, resample_func="mean"):
 
 def _resample_date_offset_to_date_offset(df, target_index, resample_func):
     """Down sample a date offset data to a target index with date offset."""
-    new_df = df.resample(target_index.freq).agg(resample_func)
+    new_df = _resample_period_index(df, target_index.freq, resample_func)
     new_df = new_df[target_index[0] : target_index[-1]]
     return new_df
 
 
 def _down_sample_tick_to_date_offset(df, target_index, resample_func):
     """Down sampling tick data to a target index with date offset."""
-    new_df = df.resample(target_index.freq).agg(resample_func)
+    new_df = _resample_period_index(df, target_index.freq, resample_func)
     new_df = new_df[target_index[0] : target_index[-1]]
     return new_df
 
@@ -124,7 +124,7 @@ def _down_sample_tick_to_tick(df, target_index, resample_func):
     end = target_index[-1].asfreq(df.index.freq, how="end")
     new_df = df[start:end]
     # Second we re-sample the aligned data
-    new_df = new_df.resample(target_index.freq).agg(resample_func)
+    new_df = _resample_period_index(new_df, target_index.freq, resample_func)
     return new_df
 
 
@@ -137,7 +137,7 @@ def _resample_date_offset_to_tick(df, target_index, resample_func):
     target_single_tick = target_tick.base
 
     # Forward fill the data to the single period tick
-    new_df = df.resample(target_single_tick).ffill()
+    new_df = _resample_period_index(df, target_single_tick, "ffill")
 
     # Now align to the target index
     start = target_index[0].asfreq(target_single_tick, how="start")
@@ -146,13 +146,28 @@ def _resample_date_offset_to_tick(df, target_index, resample_func):
 
     # If the target is multi-frequency
     if target_tick.n > 1:
-        new_df = new_df.resample(target_tick).agg(resample_func)
+        new_df = _resample_period_index(new_df, target_tick, resample_func)
     return new_df
 
 
 def _up_sample_tick_to_tick(df, target_index):
     """Up sample tick data to a tick based target index."""
-    new_df = df.resample(target_index.freq).ffill()
+    new_df = _resample_period_index(df, target_index.freq, "ffill")
+    return new_df
+
+
+def _resample_period_index(df, freq, resample_func):
+    """Resample PeriodIndex data without relying on deprecated PeriodIndex resampling."""
+    new_df = df.copy()
+    new_df.index = new_df.index.to_timestamp()
+
+    resampler = new_df.resample(freq)
+    if resample_func == "ffill":
+        new_df = resampler.ffill()
+    else:
+        new_df = resampler.agg(resample_func)
+
+    new_df.index = new_df.index.to_period(freq)
     return new_df
 
 
